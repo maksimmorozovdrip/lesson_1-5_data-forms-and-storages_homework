@@ -7,6 +7,7 @@ const emptySection = document.querySelector('[data-state-panel="empty"]');
 const editorSection = document.querySelector('[data-state-panel="editor"]');
 const viewerSection = document.querySelector('[data-state-panel="viewer"]');
 const STORAGE_KEY = 'space-mission-card';
+const DRAFT_KEY = 'space-mission-draft';
  
 function showState(state) {
   emptySection.hidden = state !== 'empty';
@@ -16,6 +17,7 @@ function showState(state) {
 
 createButton.addEventListener('click', () => {
   form.reset();
+  clearDraft();
   showState('editor');
 });
 
@@ -27,20 +29,36 @@ cancelButton.addEventListener('click', () => {
 form.addEventListener('submit', (event) => {
   event.preventDefault();
 
-  const formData = new FormData(form);
-
-  const card = {
-    missionName: formData.get('missionName'),
-    spaceAgency: formData.get('spaceAgency'),
-    launchDate: formData.get('launchDate'),
-    target: formData.get('target'),
-    status: formData.get('status'),
-    description: formData.get('description'),
-  };
+    const card = getCardFromForm();
 
     saveCard(card);
+    clearDraft();
     renderCard(card);
     showState('viewer');
+});
+
+form.addEventListener('input', () => {
+  saveDraft();
+});
+
+editButton.addEventListener('click', () => {
+  const card = loadCard();
+  fillForm(card);
+  showState('editor');
+});
+
+deleteButton.addEventListener('click', () => {
+  removeCard();
+  showState('empty');
+});
+
+cancelButton.addEventListener('click', () => {
+    clearDraft();
+  if (loadCard() === null) {
+    showState('empty');
+  } else {
+    showState('viewer');
+  }
 });
 
 function renderCard(card) {
@@ -78,31 +96,47 @@ function loadCard() {
 function removeCard() {
   localStorage.removeItem(STORAGE_KEY);
 }
+function getCardFromForm() {
+  const formData = new FormData(form);
 
-const savedCard = loadCard();
-
-if (savedCard === null) {
-  showState('empty');
-} else {
-  renderCard(savedCard);
-  showState('viewer');
+  return {
+    missionName: formData.get('missionName'),
+    spaceAgency: formData.get('spaceAgency'),
+    launchDate: formData.get('launchDate'),
+    target: formData.get('target'),
+    status: formData.get('status'),
+    description: formData.get('description'),
+  };
 }
 
-editButton.addEventListener('click', () => {
-  const card = loadCard();
-  fillForm(card);
-  showState('editor');
-});
+function saveDraft() {
+  sessionStorage.setItem(DRAFT_KEY, JSON.stringify(getCardFromForm()));
+}
 
-deleteButton.addEventListener('click', () => {
-  removeCard();
-  showState('empty');
-});
+function loadDraft() {
+  const savedDraft = sessionStorage.getItem(DRAFT_KEY);
 
-cancelButton.addEventListener('click', () => {
-  if (loadCard() === null) {
-    showState('empty');
-  } else {
-    showState('viewer');
+  if (savedDraft === null) {
+    return null;
   }
-});
+
+  return JSON.parse(savedDraft);
+}
+
+function clearDraft() {
+  sessionStorage.removeItem(DRAFT_KEY);
+}
+
+const savedDraft = loadDraft();
+const savedCard = loadCard();
+
+if (savedDraft !== null) {
+  fillForm(savedDraft);
+  showState('editor');
+} else if (savedCard !== null) {
+  renderCard(savedCard);
+  showState('viewer');
+} else {
+  showState('empty');
+}
+

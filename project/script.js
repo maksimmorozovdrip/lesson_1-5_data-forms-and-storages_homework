@@ -98,3 +98,11 @@ deleteButton.addEventListener('click', () => {
   removeCard();
   showState('empty');
 });
+
+cancelButton.addEventListener('click', () => {
+  if (loadCard() === null) {
+    showState('empty');
+  } else {
+    showState('viewer');
+  }
+});

@@ -406,3 +406,40 @@ textarea.field__control {
   }
 }
 
+.field--group {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.field__option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.field__radio {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+}
+
+.field__option label {
+  cursor: pointer;
+}
+
+.field__control--textarea {
+  resize: vertical;
+  min-height: 96px;
+}
+
+.saved-card__title,
+.saved-card__details dd {
+  overflow-wrap: anywhere;
+}
+
+.saved-card__description {
+  white-space: pre-line;
+}
+

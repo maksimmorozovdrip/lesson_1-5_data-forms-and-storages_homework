@@ -105,7 +105,19 @@
                 required
               />
             </div>
-
+            <div class="field">
+              <label class="field__label" for="card-end-date">Дата завершения</label>
+              <input
+                class="field__control"
+                id="card-end-date"
+                name="endDate"
+                type="date"
+                min="1957-10-04"
+                aria-describedby="card-end-date-error"
+              />
+              <span class="field__hint">Необязательно, если миссия ещё идёт</span>
+              <span class="field__error" id="card-end-date-error" hidden></span>
+            </div>
             <div class="field">
               <label class="field__label" for="card-target">Цель миссии</label>
               <input
@@ -183,6 +195,10 @@
       <dt>Дата запуска</dt>
       <dd data-field="launchDate"></dd>
     </div>
+    <div class="saved-card__row">
+  <dt>Дата завершения</dt>
+  <dd data-field="endDate"></dd>
+</div>
 
     <div class="saved-card__row">
       <dt>Цель миссии</dt>

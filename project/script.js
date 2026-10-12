@@ -6,137 +6,220 @@ const form = document.querySelector('form');
 const emptySection = document.querySelector('[data-state-panel="empty"]');
 const editorSection = document.querySelector('[data-state-panel="editor"]');
 const viewerSection = document.querySelector('[data-state-panel="viewer"]');
+const statusText = document.querySelector('.workspace__status');
+const endDateError = document.querySelector('#card-end-date-error');
 const STORAGE_KEY = 'space-mission-card';
 const DRAFT_KEY = 'space-mission-draft';
- 
+
 function showState(state) {
-  emptySection.hidden = state !== 'empty';
-  editorSection.hidden = state !== 'editor';
-  viewerSection.hidden = state !== 'viewer';
+    emptySection.hidden = state !== 'empty';
+    editorSection.hidden = state !== 'editor';
+    viewerSection.hidden = state !== 'viewer';
 }
 
 createButton.addEventListener('click', () => {
-  form.reset();
-  clearDraft();
-  showState('editor');
+    form.reset();
+    validateDates();
+    clearDraft();
+    showState('editor');
+    setStatus('Новая карточка');
 });
 
-cancelButton.addEventListener('click', () => {
-  showState('empty');
-});
 
 
 form.addEventListener('submit', (event) => {
-  event.preventDefault();
-
+    event.preventDefault();
+    if (!validateDates()) {
+        return;
+    }
     const card = getCardFromForm();
 
     saveCard(card);
     clearDraft();
     renderCard(card);
     showState('viewer');
+    setStatus('Карточка сохранена');
 });
 
 form.addEventListener('input', () => {
-  saveDraft();
+    saveDraft();
+    validateDates();
+    setStatus('Есть несохранённые изменения');
 });
 
 editButton.addEventListener('click', () => {
-  const card = loadCard();
-  fillForm(card);
-  showState('editor');
+    const card = loadCard();
+
+    if (card === null) {
+        showState('empty');
+        setStatus('Карточка не найдена');
+        return;
+    }
+
+    fillForm(card);
+    validateDates();
+    showState('editor');
+    setStatus('Редактирование карточки');
 });
 
 deleteButton.addEventListener('click', () => {
-  removeCard();
-  showState('empty');
+    removeCard();
+    showState('empty');
+    setStatus('Карточка удалена');
 });
 
 cancelButton.addEventListener('click', () => {
     clearDraft();
-  if (loadCard() === null) {
-    showState('empty');
-  } else {
-    showState('viewer');
-  }
+    if (loadCard() === null) {
+        showState('empty');
+    } else {
+        showState('viewer');
+    }
+    setStatus('Изменения отменены');
+});
+
+window.addEventListener('storage', (event) => {
+    if (event.key !== STORAGE_KEY) {
+        return;
+    }
+
+    if (event.newValue === null) {
+        if (editorSection.hidden === false) {
+            setStatus('Карточку удалили в другой вкладке');
+        } else {
+            showState('empty');
+            setStatus('Карточку удалили в другой вкладке');
+        }
+        return;
+    }
+
+    const card = parseCard(event.newValue);
+
+    if (card === null) {
+        return;
+    }
+
+    renderCard(card);
+
+    if (editorSection.hidden === false) {
+        setStatus('Карточка изменена в другой вкладке');
+    } else {
+        showState('viewer');
+        setStatus('Карточка обновлена из другой вкладки');
+    }
 });
 
 function renderCard(card) {
-  document.querySelector('[data-field="missionName"]').textContent = card.missionName;
-  document.querySelector('[data-field="spaceAgency"]').textContent = card.spaceAgency;
-  document.querySelector('[data-field="launchDate"]').textContent = card.launchDate;
-  document.querySelector('[data-field="target"]').textContent = card.target;
-  document.querySelector('[data-field="status"]').textContent = card.status;
-  document.querySelector('[data-field="description"]').textContent = card.description;
+    document.querySelector('[data-field="missionName"]').textContent = card.missionName;
+    document.querySelector('[data-field="spaceAgency"]').textContent = card.spaceAgency;
+    document.querySelector('[data-field="launchDate"]').textContent = card.launchDate;
+    document.querySelector('[data-field="endDate"]').textContent = card.endDate || '—';
+    document.querySelector('[data-field="target"]').textContent = card.target;
+    document.querySelector('[data-field="status"]').textContent = card.status;
+    document.querySelector('[data-field="description"]').textContent = card.description;
 }
 
 function fillForm(card) {
-  form.elements.missionName.value = card.missionName;
-  form.elements.spaceAgency.value = card.spaceAgency;
-  form.elements.launchDate.value = card.launchDate;
-  form.elements.target.value = card.target;
-  form.elements.status.value = card.status;
-  form.elements.description.value = card.description;
+    form.elements.missionName.value = card.missionName;
+    form.elements.spaceAgency.value = card.spaceAgency;
+    form.elements.launchDate.value = card.launchDate;
+    form.elements.endDate.value = card.endDate || '';
+    form.elements.target.value = card.target;
+    form.elements.status.value = card.status;
+    form.elements.description.value = card.description;
 }
 
 function saveCard(card) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(card));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(card));
 }
 
 function loadCard() {
-  const savedCard = localStorage.getItem(STORAGE_KEY);
+    const savedCard = localStorage.getItem(STORAGE_KEY);
 
-  if (savedCard === null) {
-    return null;
-  }
+    if (savedCard === null) {
+        return null;
+    }
 
-  return JSON.parse(savedCard);
+    return parseCard(savedCard);
 }
 
 function removeCard() {
-  localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(STORAGE_KEY);
 }
 function getCardFromForm() {
-  const formData = new FormData(form);
+    const formData = new FormData(form);
 
-  return {
-    missionName: formData.get('missionName'),
-    spaceAgency: formData.get('spaceAgency'),
-    launchDate: formData.get('launchDate'),
-    target: formData.get('target'),
-    status: formData.get('status'),
-    description: formData.get('description'),
-  };
+    return {
+        missionName: formData.get('missionName'),
+        spaceAgency: formData.get('spaceAgency'),
+        launchDate: formData.get('launchDate'),
+        endDate: formData.get('endDate'),
+        target: formData.get('target'),
+        status: formData.get('status'),
+        description: formData.get('description'),
+    };
 }
 
 function saveDraft() {
-  sessionStorage.setItem(DRAFT_KEY, JSON.stringify(getCardFromForm()));
+    sessionStorage.setItem(DRAFT_KEY, JSON.stringify(getCardFromForm()));
 }
 
 function loadDraft() {
-  const savedDraft = sessionStorage.getItem(DRAFT_KEY);
+    const savedDraft = sessionStorage.getItem(DRAFT_KEY);
 
-  if (savedDraft === null) {
-    return null;
-  }
+    if (savedDraft === null) {
+        return null;
+    }
 
-  return JSON.parse(savedDraft);
+    return parseCard(savedDraft);
 }
 
 function clearDraft() {
-  sessionStorage.removeItem(DRAFT_KEY);
+    sessionStorage.removeItem(DRAFT_KEY);
+}
+
+function setStatus(message) {
+    statusText.textContent = message;
+}
+function validateDates() {
+    const launchDate = form.elements.launchDate.value;
+    const endDate = form.elements.endDate.value;
+
+    if (launchDate !== '' && endDate !== '' && endDate < launchDate) {
+        endDateError.textContent = 'Дата завершения не может быть раньше даты запуска';
+        endDateError.hidden = false;
+        return false;
+    }
+
+    endDateError.textContent = '';
+    endDateError.hidden = true;
+    return true;
+}
+
+function parseCard(text) {
+    try {
+        return JSON.parse(text);
+    } catch (error) {
+        return null;
+    }
 }
 
 const savedDraft = loadDraft();
 const savedCard = loadCard();
 
 if (savedDraft !== null) {
-  fillForm(savedDraft);
-  showState('editor');
+    fillForm(savedDraft);
+    validateDates();
+    showState('editor');
+    setStatus('Восстановлен несохранённый черновик');
 } else if (savedCard !== null) {
-  renderCard(savedCard);
-  showState('viewer');
+    renderCard(savedCard);
+    showState('viewer');
+    setStatus('Карточка загружена');
 } else {
-  showState('empty');
+    showState('empty');
+    setStatus('Карточки пока нет');
 }
+
+
 

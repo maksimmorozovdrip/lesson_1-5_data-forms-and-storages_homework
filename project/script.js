@@ -26,6 +26,7 @@ createButton.addEventListener('click', () => {
 });
 
 
+
 form.addEventListener('submit', (event) => {
     event.preventDefault();
     if (!validateDates()) {
@@ -68,6 +69,28 @@ cancelButton.addEventListener('click', () => {
         showState('viewer');
     }
     setStatus('Изменения отменены');
+});
+
+window.addEventListener('storage', (event) => {
+    if (event.key !== STORAGE_KEY) {
+        return;
+    }
+
+    if (event.newValue === null) {
+        showState('empty');
+        setStatus('Карточка уже удалена');
+        return;
+    }
+
+    const card = JSON.parse(event.newValue);
+    renderCard(card);
+
+    if (editorSection.hidden === false) {
+        setStatus('Карточка изменена в другой вкладке');
+    } else {
+        showState('viewer');
+        setStatus('Карточка обновлена из другой вкладки');
+    }
 });
 
 function renderCard(card) {

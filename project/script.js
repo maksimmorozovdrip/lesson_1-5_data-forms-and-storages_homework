@@ -49,6 +49,13 @@ form.addEventListener('input', () => {
 
 editButton.addEventListener('click', () => {
     const card = loadCard();
+
+    if (card === null) {
+        showState('empty');
+        setStatus('Карточка не найдена');
+        return;
+    }
+
     fillForm(card);
     validateDates();
     showState('editor');
@@ -77,12 +84,21 @@ window.addEventListener('storage', (event) => {
     }
 
     if (event.newValue === null) {
-        showState('empty');
-        setStatus('Карточка уже удалена');
+        if (editorSection.hidden === false) {
+            setStatus('Карточку удалили в другой вкладке');
+        } else {
+            showState('empty');
+            setStatus('Карточку удалили в другой вкладке');
+        }
         return;
     }
 
-    const card = JSON.parse(event.newValue);
+    const card = parseCard(event.newValue);
+
+    if (card === null) {
+        return;
+    }
+
     renderCard(card);
 
     if (editorSection.hidden === false) {
@@ -124,7 +140,7 @@ function loadCard() {
         return null;
     }
 
-    return JSON.parse(savedCard);
+    return parseCard(savedCard);
 }
 
 function removeCard() {
@@ -155,7 +171,7 @@ function loadDraft() {
         return null;
     }
 
-    return JSON.parse(savedDraft);
+    return parseCard(savedDraft);
 }
 
 function clearDraft() {
@@ -179,6 +195,15 @@ function validateDates() {
     endDateError.hidden = true;
     return true;
 }
+
+function parseCard(text) {
+    try {
+        return JSON.parse(text);
+    } catch (error) {
+        return null;
+    }
+}
+
 const savedDraft = loadDraft();
 const savedCard = loadCard();
 

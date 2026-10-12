@@ -407,10 +407,14 @@ textarea.field__control {
 }
 
 .field--group {
-  margin: 0;
+  margin: 0 0 22px;
   padding: 0;
   border: 0;
   min-width: 0;
+}
+
+.field--group .field__label {
+  padding: 0;
 }
 
 .field__option {
@@ -429,13 +433,7 @@ textarea.field__control {
   cursor: pointer;
 }
 
-.field__control--textarea {
-  resize: vertical;
-  min-height: 96px;
-}
-
-.saved-card__title,
-.saved-card__details dd {
+.saved-card__title {
   overflow-wrap: anywhere;
 }
 
@@ -443,3 +441,8 @@ textarea.field__control {
   white-space: pre-line;
 }
 
+.field__error {
+  color: var(--danger);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}

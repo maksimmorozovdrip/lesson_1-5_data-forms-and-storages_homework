@@ -6,6 +6,7 @@ const form = document.querySelector('form');
 const emptySection = document.querySelector('[data-state-panel="empty"]');
 const editorSection = document.querySelector('[data-state-panel="editor"]');
 const viewerSection = document.querySelector('[data-state-panel="viewer"]');
+const statusText = document.querySelector('.workspace__status');
 const STORAGE_KEY = 'space-mission-card';
 const DRAFT_KEY = 'space-mission-draft';
  
@@ -21,10 +22,6 @@ createButton.addEventListener('click', () => {
   showState('editor');
 });
 
-cancelButton.addEventListener('click', () => {
-  showState('empty');
-});
-
 
 form.addEventListener('submit', (event) => {
   event.preventDefault();
@@ -35,21 +32,24 @@ form.addEventListener('submit', (event) => {
     clearDraft();
     renderCard(card);
     showState('viewer');
+    setStatus('Карточка сохранена');
 });
 
 form.addEventListener('input', () => {
   saveDraft();
+  setStatus('Есть несохранённые изменения');
 });
 
 editButton.addEventListener('click', () => {
   const card = loadCard();
   fillForm(card);
   showState('editor');
-});
+  setStatus('Редактирование карточки');});
 
 deleteButton.addEventListener('click', () => {
   removeCard();
   showState('empty');
+  setStatus('Карточка удалена');
 });
 
 cancelButton.addEventListener('click', () => {
@@ -59,6 +59,7 @@ cancelButton.addEventListener('click', () => {
   } else {
     showState('viewer');
   }
+  setStatus('Изменения отменены');
 });
 
 function renderCard(card) {
@@ -127,16 +128,24 @@ function clearDraft() {
   sessionStorage.removeItem(DRAFT_KEY);
 }
 
+function setStatus(message) {
+  statusText.textContent = message;
+}
 const savedDraft = loadDraft();
 const savedCard = loadCard();
 
 if (savedDraft !== null) {
   fillForm(savedDraft);
   showState('editor');
+  setStatus('Восстановлен несохранённый черновик');
 } else if (savedCard !== null) {
   renderCard(savedCard);
   showState('viewer');
+  setStatus('Карточка загружена');
 } else {
   showState('empty');
+  setStatus('Карточки пока нет');
 }
+
+
 
